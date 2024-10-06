@@ -8,54 +8,56 @@
 import SwiftUI
 import SwiftData
 
+@Observable
+class DarkTheme {
+    var isEnabled : Bool = false
+}
+
+struct DarkChosiseView : View {
+    
+    @Bindable var darkTheme : DarkTheme
+    
+    var body: some View {
+        Toggle(isOn: $darkTheme.isEnabled) {
+            EmptyView()
+        }.fixedSize()
+    }
+}
+
+struct DarkChoiseToggleView : View {
+    @Environment(DarkTheme.self) private var darkTheme: DarkTheme
+    var body: some View {
+        DarkChosiseView(darkTheme: darkTheme)
+    }
+}
+
+struct InformationText : View {
+    
+    @Environment(DarkTheme.self) private var darkTheme
+    
+    var body: some View {
+        Text(darkTheme.isEnabled ? "DARK THEME" : "LIGHT THEME")
+            .font(.title2)
+            .foregroundStyle(darkTheme.isEnabled ? .white : .black )
+    }
+}
+
+
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    
+    @Environment(DarkTheme.self) private var darkTheme
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
+        VStack {
+            DarkChoiseToggleView()
+            InformationText()
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(darkTheme.isEnabled ? .black : .white)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .environment(DarkTheme())
 }
